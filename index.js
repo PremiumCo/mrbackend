@@ -9,14 +9,14 @@ app.use(cors());
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
 
 client.once('ready', () => {
-  console.log(`Logged in as daddy ${client.user.tag}!`);
+  console.log(`Logged in as ${client.user.tag}!`);
 });
 
 client.login('MTIyNDc4MTk0MTM1NDUyODkxMA.GUBfD8.KkMZTpi1yHigN_Sjy4CNPAJs8Xy5mNgPfca_L4');
 
 app.get('/roles', async (req, res) => {
   try {
-    const guild = client.guilds.cache.get(GUILD_ID);
+    const guild = client.guilds.cache.get('841760990637850675');
     if (!guild) {
       console.error('Guild not found');
       return res.status(404).json({ error: 'Guild not found' });
@@ -28,7 +28,7 @@ app.get('/roles', async (req, res) => {
 
     // Filter and sort staff members
     const staffMembers = members.filter(member => 
-      member.roles.cache.some(role => role.id === STAFF_ROLE_ID)
+      member.roles.cache.some(role => role.id === '868355191064379492')
     );
 
     console.log('Staff members:', staffMembers); // Log staff members found
@@ -43,8 +43,8 @@ app.get('/roles', async (req, res) => {
     const staffData = sortedStaffMembers.map(member => ({
       id: member.id,
       username: member.user.username,
-      displayName: member.displayName, // Change to displayName
-      avatar: member.user.displayAvatarURL(), // Change to displayAvatarURL
+      displayName: member.user.displayName,
+      avatar: member.user.avatarURL(),
       roles: member.roles.cache.map(role => ({
         id: role.id,
         name: role.name,
