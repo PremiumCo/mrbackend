@@ -9,7 +9,7 @@ app.use(cors());
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
 
 client.once('ready', () => {
-  console.log(`Logged in as ${client.user.tag}!`);
+  console.log(`Logged in as daddy ${client.user.tag}!`);
 });
 
 client.login('MTIyNDc4MTk0MTM1NDUyODkxMA.GUBfD8.KkMZTpi1yHigN_Sjy4CNPAJs8Xy5mNgPfca_L4');
