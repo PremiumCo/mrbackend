@@ -22,34 +22,51 @@ app.get('/roles', async (req, res) => {
       return res.status(404).json({ error: 'Guild not found' });
     }
 
+    // List of role IDs to exclude
+    const excludedRoleIds = [
+      '1292243598024249427', '1290056548231544843', '1290055932755185705',
+      '1290055681256194068', '1290055614034083880', '1290055526075338804',
+      '1290062237049950208', '1199255228122419200', '1199255203061444641',
+      '1200322521950584925', '1199255170207465472', '1199255078008262716',
+      '1233102751160860672', '1219517641144664096', '841785402507395074',
+      '1143423549999153172', '841785400552062996', '1174870269723156620',
+      '1231069445628231741', '841760990637850675','890356658054778983', 
+      '841785401332596747', '845379527004651572'
+    ];
+
     // Fetch all members in the guild
     const members = await guild.members.fetch();
-    console.log('Fetched members:', members); // Log fetched members
 
     // Filter and sort staff members
     const staffMembers = members.filter(member => 
       member.roles.cache.some(role => role.id === '868355191064379492')
     );
 
-    console.log('Staff members:', staffMembers); // Log staff members found
-
     const sortedStaffMembers = staffMembers.sort((a, b) => {
-      const aHighestRole = a.roles.cache.reduce((prev, current) => (prev.position > current.position) ? prev : current);
-      const bHighestRole = b.roles.cache.reduce((prev, current) => (prev.position > current.position) ? prev : current);
+      const aHighestRole = a.roles.cache
+        .filter(role => !excludedRoleIds.includes(role.id)) // Exclude roles
+        .reduce((prev, current) => (prev.position > current.position) ? prev : current, {});
+      const bHighestRole = b.roles.cache
+        .filter(role => !excludedRoleIds.includes(role.id)) // Exclude roles
+        .reduce((prev, current) => (prev.position > current.position) ? prev : current, {});
       return bHighestRole.position - aHighestRole.position;
     });
 
-    // Map the sorted members to return only necessary information
+    // Map and sort roles for each member
     const staffData = sortedStaffMembers.map(member => ({
       id: member.id,
       username: member.user.username,
-      displayName: member.user.displayName,
+      displayName: member.displayName || member.user.username,
       avatar: member.user.avatarURL(),
-      roles: member.roles.cache.map(role => ({
-        id: role.id,
-        name: role.name,
-        position: role.position
-      }))
+      roles: member.roles.cache
+        .filter(role => !excludedRoleIds.includes(role.id)) // Exclude specified roles
+        .sort((a, b) => b.position - a.position) // Sort roles by position (highest first)
+        .map(role => ({
+          id: role.id,
+          name: role.name,
+          position: role.position,
+          color: `#${role.color.toString(16).padStart(6, '0')}` // Convert role color to hex string
+        }))
     }));
 
     res.status(200).json(staffData);
