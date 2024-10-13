@@ -76,6 +76,46 @@ app.get('/roles', async (req, res) => {
   }
 });
 
+app.get('/admin/check-roles', async (req, res) => {
+  const { userId, guildId } = req.query;
+
+  try {
+      // Fetch the guild using the bot client
+      const guild = await client.guilds.fetch(guildId);
+      if (!guild) {
+          return res.status(404).json({ error: 'Guild not found' });
+      }
+
+      // Fetch the member in the guild
+      let member;
+      try {
+          member = await guild.members.fetch(userId);
+      } catch (fetchError) {
+          if (fetchError.code === 50001) { // Missing Access
+              return res.status(404).json({ error: 'Member not found in guild' });
+          }
+          console.error('Error fetching member:', fetchError);
+          return res.status(500).json({ error: 'Failed to fetch member' });
+      }
+
+      // Check if the member has roles
+      if (!member.roles || !member.roles.cache) {
+          console.error('Member roles not available:', member);
+          return res.status(500).json({ error: 'Member roles not available' });
+      }
+
+      console.log('Member roles:', member.roles.cache.map(role => role.id)); // Log roles
+
+      // Check if the member has the specific role
+      const hasAccessRole = member.roles.cache.some(role => role.id === '1206515346979430471');
+
+      return res.status(200).json({ hasAccess: hasAccessRole });
+  } catch (error) {
+      console.error('Error fetching member roles:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
