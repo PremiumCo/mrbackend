@@ -9,18 +9,8 @@ const port = 5000;
 // Define allowed origins for CORS
 const allowedOrigins = ['http://localhost:3000', 'https://your-production-url.com'];
 
-// Configure CORS
-app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, origin); // Allow the request
-        } else {
-            callback(new Error('Not allowed by CORS')); // Deny the request
-        }
-    },
-}));
-
-app.use(express.json()); // Middleware for parsing application/json
+app.use(express.json());
+app.use(cors());
 
 // Initialize Discord client
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
@@ -40,32 +30,30 @@ mongoose.connect(process.env.MONGO_URI, {
 .then(() => console.log('Connected to MongoDB'))
 .catch(err => console.error('MongoDB connection error:', err));
 
-// License schema and model
 const licenseSchema = new mongoose.Schema({
     userId: String,
     licenseKey: String,
-    isActive: Boolean
-});
-
-const License = mongoose.model('License', licenseSchema);
-
-// Endpoint to check if a user has a valid license
-app.get('/hasLicense', async (req, res) => {
-    const { userId } = req.query;
-
+    isActive: Boolean,
+  });
+  
+  const License = mongoose.model('License', licenseSchema);
+  
+  // Route to check the license
+app.post('/checkLicense', async (req, res) => {
+    const { userId } = req.body;
+  
     try {
-        const license = await License.findOne({ userId, isActive: true });
-
-        if (license) {
-            res.status(200).json({ hasLicense: true });
-        } else {
-            res.status(404).json({ hasLicense: false });
-        }
-    } catch (err) {
-        console.error('Error checking license:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
+      const license = await License.findOne({ userId, isActive: true });
+      if (license) {
+        res.status(200).json({ valid: true, message: 'License valid' });
+      } else {
+        res.status(403).json({ valid: false, message: 'Invalid or inactive license' });
+      }
+    } catch (error) {
+      console.error('Error checking license:', error);
+      res.status(500).json({ error: 'Failed to contact license server' });
     }
-});
+  });
 
 // Endpoint to get roles of members in a specific guild
 app.get('/roles', async (req, res) => {
