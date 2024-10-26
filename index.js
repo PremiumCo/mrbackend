@@ -3,20 +3,28 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const { Client, GatewayIntentBits } = require('discord.js');
+
 const app = express();
 const port = 5000;
 
 // Define allowed origins for CORS
 const allowedOrigins = ['http://localhost:3000', 'https://your-production-url.com'];
-
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+}));
 app.use(express.json());
-app.use(cors());
 
 // Initialize Discord client
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
 
 client.once('ready', () => {
-    console.log(`Logged in as ${client.user.tag}!`);
+  console.log(`Logged in as ${client.user.tag}!`);
 });
 
 // Login to Discord using the bot token from environment variables
@@ -24,36 +32,35 @@ client.login(process.env.TOKEN);
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
-.then(() => console.log('Connected to MongoDB'))
-.catch(err => console.error('MongoDB connection error:', err));
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+}).then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('MongoDB connection error:', err));
 
+// License Schema and Model
 const licenseSchema = new mongoose.Schema({
-    userId: String,
-    licenseKey: String,
-    isActive: Boolean,
-  });
-  
-  const License = mongoose.model('License', licenseSchema);
-  
-  // Route to check the license
+  userId: String,
+  licenseKey: String,
+  isActive: Boolean,
+});
+const License = mongoose.model('License', licenseSchema);
+
+// Route to check the license
 app.post('/checkLicense', async (req, res) => {
-    const { userId } = req.body;
-  
-    try {
-      const license = await License.findOne({ userId, isActive: true });
-      if (license) {
-        res.status(200).json({ valid: true, message: 'License valid' });
-      } else {
-        res.status(403).json({ valid: false, message: 'Invalid or inactive license' });
-      }
-    } catch (error) {
-      console.error('Error checking license:', error);
-      res.status(500).json({ error: 'Failed to contact license server' });
+  const { userId } = req.body;
+  try {
+    const license = await License.findOne({ userId, isActive: true });
+    if (license) {
+      res.status(200).json({ valid: true, message: 'License valid' });
+    } else {
+      res.status(403).json({ valid: false, message: 'Invalid or inactive license' });
     }
-  });
+  } catch (error) {
+    console.error('Error checking license:', error);
+    res.status(500).json({ error: 'Failed to contact license server' });
+  }
+});
+
 
 // Endpoint to get roles of members in a specific guild
 app.get('/roles', async (req, res) => {
